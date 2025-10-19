@@ -31,3 +31,8 @@ def update_book(book_id: int, book: schemas.BookCreate, db: Session = Depends(ge
 @app.delete("/books/{book_id}")
 def delete_book(book_id: int, db: Session = Depends(get_db)):
     return crud.delete_book(db, book_id)
+
+@app.post("/register", response_model=schemas.User)  # ✅ Use User schema (not Usercreate)
+def create_user(user: schemas.Usercreate, db: Session = Depends(get_db)):
+    """Create a new user"""
+    return crud.create_user(db=db, user=user)

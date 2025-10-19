@@ -2,9 +2,11 @@ from sqlalchemy.orm import Session
 import models
 import schemas
 from fastapi import HTTPException   
+from security import get_hash_password, verify_password
+from sqlalchemy.exc import IntegrityError 
 
-def get_books(db: Session):  # ✅ Fixed function name
-    return db.query(models.Book).all()  # ✅ Fixed model name (Book not book)
+def get_books(db: Session):  
+    return db.query(models.Book).all()  
 
 def get_book_by_id(db: Session, book_id: int):
     book = db.query(models.Book).filter(models.Book.id == book_id).first()
@@ -16,7 +18,7 @@ def create_book(db: Session, book: schemas.BookCreate):
     db_book = models.Book(
         title=book.title, 
         author=book.author, 
-        published_year=book.published_year  # ✅ Added missing field
+        published_year=book.published_year  
     )
     db.add(db_book)
     db.commit()
@@ -41,3 +43,29 @@ def delete_book(db: Session, book_id: int):
     db.delete(book)
     db.commit()
     return {"detail": "Book deleted successfully"}
+
+def create_user(db: Session, user: schemas.Usercreate):
+    existing_user = db.query(models.Users).filter(models.Users.username == user.username).first()
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    
+    existing_email = db.query(models.Users).filter(models.Users.email == user.email).first()
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already exists")
+    
+    hash_password = get_hash_password(user.password)
+
+    db_user = models.Users(
+        username=user.username,
+        email=user.email,
+        hash_password=hash_password
+    )
+    try:
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="user creation failed") 
