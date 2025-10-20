@@ -27,3 +27,20 @@ class User(UserBase):
     is_active: bool
     
     model_config = ConfigDict(from_attributes=True)
+
+# Add these to your existing schemas
+
+class UserLogin(BaseModel):
+    """Schema for user login (email + password)"""
+    email: str
+    password: str
+
+class Token(BaseModel):
+    """Schema for token response (both access and refresh tokens)"""
+    access_token: str
+    refresh_token: str
+    token_type: str
+
+class TokenRefresh(BaseModel):
+    """Schema for token refresh request"""
+    refresh_token: str

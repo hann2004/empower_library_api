@@ -69,3 +69,18 @@ def create_user(db: Session, user: schemas.Usercreate):
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="user creation failed") 
+
+def authenticate_user(db: Session, email: str, password: str):
+    """
+    Authenticate a user with email and password
+    Returns user object if valid, False if invalid
+    """
+    user = db.query(models.Users).filter(models.Users.email == email).first()
+    
+    if not user:
+        return False
+    
+    if not verify_password(password, user.hash_password):
+        return False
+    
+    return user
