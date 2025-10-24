@@ -8,10 +8,19 @@ from typing import List
 from security import create_access_token, create_refresh_token, verify_token
 from dependencies import get_current_user
 from schemas import Token, TokenRefresh, UserLogin
-
+from fastapi.middleware.cors import CORSMiddleware
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Your Next.js frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ✅ Create a new book
 @app.post("/books", response_model=schemas.Book)  
@@ -95,3 +104,20 @@ def protected_test(current_user: schemas.User = Depends(get_current_user)):
         "your_email": current_user.email,
         "is_active": current_user.is_active
     }
+
+# Borrowing endpoints
+@app.post("/borrow", response_model=schemas.Borrowing)
+def borrow_book(borrowing: schemas.BorrowingCreate, db: Session = Depends(get_db)):
+    return crud.borrow_book(db=db, borrowing=borrowing)
+
+@app.post("/return", response_model=schemas.Borrowing)
+def return_book(return_data: schemas.BorrowingReturn, db: Session = Depends(get_db)):
+    return crud.return_book(db=db, borrowing_id=return_data.borrowing_id)
+
+@app.get("/users/{user_id}/borrowings", response_model=List[schemas.Borrowing])
+def get_user_borrowings(user_id: int, db: Session = Depends(get_db)):
+    return crud.get_user_borrowings(db=db, user_id=user_id)
+
+@app.get("/borrowings/active", response_model=List[schemas.Borrowing])
+def get_active_borrowings(db: Session = Depends(get_db)):
+    return crud.get_active_borrowings(db=db)

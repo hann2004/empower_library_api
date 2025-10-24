@@ -84,3 +84,57 @@ def authenticate_user(db: Session, email: str, password: str):
         return False
     
     return user
+
+def borrow_book(db: Session, borrowing: schemas.BorrowingCreate):
+    # Check if book is available
+    book = db.query(models.Book).filter(models.Book.id == borrowing.book_id).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    if not book.is_available:
+        raise HTTPException(status_code=400, detail="Book is already borrowed")
+    
+    # Check if user exists
+    user = db.query(models.Users).filter(models.Users.id == borrowing.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Create borrowing record
+    db_borrowing = models.Borrowing(
+        user_id=borrowing.user_id,
+        book_id=borrowing.book_id,
+        borrow_date=datetime.utcnow(),
+        due_date=borrowing.due_date
+    )
+    
+    # Mark book as unavailable
+    book.is_available = False
+    
+    db.add(db_borrowing)
+    db.commit()
+    db.refresh(db_borrowing)
+    return db_borrowing
+
+def return_book(db: Session, borrowing_id: int):
+    borrowing = db.query(models.Borrowing).filter(models.Borrowing.id == borrowing_id).first()
+    if not borrowing:
+        raise HTTPException(status_code=404, detail="Borrowing record not found")
+    
+    if borrowing.return_date:
+        raise HTTPException(status_code=400, detail="Book already returned")
+    
+    # Mark as returned
+    borrowing.return_date = datetime.utcnow()
+    
+    # Mark book as available
+    book = db.query(models.Book).filter(models.Book.id == borrowing.book_id).first()
+    book.is_available = True
+    
+    db.commit()
+    db.refresh(borrowing)
+    return borrowing
+
+def get_user_borrowings(db: Session, user_id: int):
+    return db.query(models.Borrowing).filter(models.Borrowing.user_id == user_id).all()
+
+def get_active_borrowings(db: Session):
+    return db.query(models.Borrowing).filter(models.Borrowing.return_date == None).all()

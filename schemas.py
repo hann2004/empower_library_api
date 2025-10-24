@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional as optional
+from sqlalchemy.sql.sqltypes import DateTime
 
 class BookBase(BaseModel):
     title: str
@@ -44,3 +45,23 @@ class Token(BaseModel):
 class TokenRefresh(BaseModel):
     """Schema for token refresh request"""
     refresh_token: str
+
+class BorrowingBase(BaseModel):
+    user_id: int
+    book_id: int
+
+class BorrowingCreate(BorrowingBase):
+    due_date: DateTime
+
+class Borrowing(BorrowingBase):
+    id: int
+    borrow_date: DateTime
+    due_date: DateTime
+    return_date: optional[DateTime] = None
+    book: optional[Book] = None
+    user: optional[User] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class BorrowingReturn(BaseModel):
+    borrowing_id: int
