@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional as optional
 from sqlalchemy.sql.sqltypes import DateTime
+from datetime import datetime
 
 class BookBase(BaseModel):
     title: str
@@ -51,13 +52,13 @@ class BorrowingBase(BaseModel):
     book_id: int
 
 class BorrowingCreate(BorrowingBase):
-    due_date: DateTime
+    due_date: datetime
 
 class Borrowing(BorrowingBase):
     id: int
-    borrow_date: DateTime
-    due_date: DateTime
-    return_date: optional[DateTime] = None
+    borrow_date: datetime
+    due_date: datetime
+    return_date: optional[datetime] = None
     book: optional[Book] = None
     user: optional[User] = None
     

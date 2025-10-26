@@ -30,6 +30,7 @@ class Borrowing(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     book_id = Column(Integer, ForeignKey("books.id"))
     borrow_date = Column(DateTime, default=dateTime.utcnow)
+    due_date = Column(DateTime)
     return_date = Column(DateTime, nullable=True)
 
     
